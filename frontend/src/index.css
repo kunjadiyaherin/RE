@@ -1,0 +1,155 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --brand-bg: #090D16;
+  --brand-panel: #101726;
+  --brand-border: #1F2E4D;
+  --brand-text: #F3F4F6;
+  --brand-muted: #9CA3AF;
+  --brand-accent: #3B82F6;
+  --brand-glass-card: #162035;
+  --brand-glass-card-border: #2B3E66;
+  --scrollbar-track: #090D16;
+  --scrollbar-thumb: #1F2E4D;
+  --shadow-opacity: 0.5;
+}
+
+[data-theme="light"] {
+  --brand-bg: #F9FAFB;
+  --brand-panel: #FFFFFF;
+  --brand-border: #E5E7EB;
+  --brand-text: #111827;
+  --brand-muted: #6B7280;
+  --brand-accent: #2563EB;
+  --brand-glass-card: #F3F4F6;
+  --brand-glass-card-border: #D1D5DB;
+  --scrollbar-track: #F9FAFB;
+  --scrollbar-thumb: #E5E7EB;
+  --shadow-opacity: 0.1;
+}
+
+@layer base {
+  body {
+    background-color: var(--brand-bg);
+    color: var(--brand-text);
+    @apply antialiased transition-colors duration-200;
+    font-family: 'Inter', sans-serif;
+  }
+}
+
+.glass-panel {
+  background-color: var(--brand-panel);
+  border: 1px solid var(--brand-border);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, var(--shadow-opacity));
+  backdrop-filter: blur(8px);
+  @apply transition-colors duration-200;
+}
+
+.glass-card {
+  background-color: var(--brand-glass-card);
+  border: 1px solid var(--brand-glass-card-border);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, calc(var(--shadow-opacity) * 0.8));
+  @apply transition-colors duration-200;
+}
+
+/* Custom Scrollbar for dashboard listings */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--brand-accent);
+}
+
+/* Leaflet Map Customizations */
+.leaflet-container {
+  background: var(--brand-bg) !important;
+}
+
+.leaflet-bar {
+  border: 1px solid var(--brand-border) !important;
+  background-color: var(--brand-panel) !important;
+}
+
+.leaflet-bar a {
+  background-color: var(--brand-panel) !important;
+  color: var(--brand-text) !important;
+  border-bottom: 1px solid var(--brand-border) !important;
+}
+
+.leaflet-bar a:hover {
+  background-color: var(--brand-border) !important;
+}
+
+/* Fade-In animation for Tab Navigation and Auth view */
+@keyframes tabFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: tabFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Card hover animation (smooth lift & glow) */
+.hover-card-lift {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-card-lift:hover {
+  transform: translateY(-4px);
+  border-color: var(--brand-accent) !important;
+  box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.2);
+}
+
+/* Loading animations */
+@keyframes spinSlow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulseGlowing {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(0.98);
+    filter: drop-shadow(0 0 5px rgba(59, 130, 246, 0.2));
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.02);
+    filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.45));
+  }
+}
+
+.animate-spin-slow {
+  animation: spinSlow 3s linear infinite;
+}
+
+.animate-pulse-glowing {
+  animation: pulseGlowing 2s ease-in-out infinite;
+}
+
+/* Premium gradient backgrounds */
+.bg-gradient-auth {
+  background: radial-gradient(circle at top right, rgba(59, 130, 246, 0.08), transparent 45%),
+              radial-gradient(circle at bottom left, rgba(59, 130, 246, 0.05), transparent 45%),
+              var(--brand-bg);
+}
