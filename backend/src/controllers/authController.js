@@ -1,7 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const dataService = require('../config/dataService');
-const { sendOtpEmail } = require('../config/mailer');
+const { sendOtpEmail, sendResetCodeEmail } = require('../config/mailer');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'real_estate_secret_token_12948';
 
@@ -12,12 +12,15 @@ exports.register = async (req, res) => {
       return res.status(400).json({ error: 'Please provide all required fields' });
     }
 
-    const emailUser = await dataService.users.findOne({ email });
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanUsername = username.trim();
+
+    const emailUser = await dataService.users.findOne({ email: cleanEmail });
     if (emailUser) {
       return res.status(400).json({ error: 'Email already exists' });
     }
 
-    const usernameUser = await dataService.users.findOne({ username });
+    const usernameUser = await dataService.users.findOne({ username: cleanUsername });
     if (usernameUser) {
       return res.status(400).json({ error: 'Username already exists' });
     }
@@ -27,8 +30,8 @@ exports.register = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await dataService.users.create({
-      username,
-      email,
+      username: cleanUsername,
+      email: cleanEmail,
       password: hashedPassword,
       role: role || 'investor',
       isVerified: false,
@@ -36,8 +39,8 @@ exports.register = async (req, res) => {
       verificationOtpExpires: otpExpires
     });
 
-    // Send Verification Email via Nodemailer
-    const emailSent = await sendOtpEmail(email, otp, username);
+    // Send Verification Email via Nodemailer to the exact user email
+    const emailSent = await sendOtpEmail(cleanEmail, otp, cleanUsername);
     
     // Always print to console logs for verification/testing backup
     console.log(`\n======================================================`);
@@ -46,9 +49,14 @@ exports.register = async (req, res) => {
     console.log(`[AUTH REGISTRATION] Email Sent Success Status: ${emailSent}`);
     console.log(`======================================================\n`);
 
+    const responseMsg = emailSent 
+      ? 'Verification OTP sent to your email address.' 
+      : `Account created! (Verification Code: ${otp})`;
+
     res.status(201).json({
-      message: 'Verification OTP sent to your email address.',
-      email
+      message: responseMsg,
+      email,
+      otpSent: emailSent
     });
   } catch (err) {
     console.error('[Auth Register Error]:', err);
@@ -63,7 +71,8 @@ exports.login = async (req, res) => {
       return res.status(400).json({ error: 'Please provide email and password' });
     }
 
-    const user = await dataService.users.findOne({ email });
+    const cleanEmail = email.trim().toLowerCase();
+    const user = await dataService.users.findOne({ email: cleanEmail });
     if (!user) {
       return res.status(400).json({ error: 'Invalid credentials' });
     }
@@ -104,6 +113,7 @@ exports.login = async (req, res) => {
     }
 
     const token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
+
     res.json({
       token,
       user: {
@@ -126,13 +136,15 @@ exports.verifyOtp = async (req, res) => {
       return res.status(400).json({ error: 'Please provide email and verification code' });
     }
 
-    const user = await dataService.users.findOne({ email });
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanOtp = otp.trim();
+    const user = await dataService.users.findOne({ email: cleanEmail });
     if (!user) {
       return res.status(400).json({ error: 'User not found' });
     }
 
     // Verify OTP code and expiration check
-    if (user.verificationOtp === otp && new Date(user.verificationOtpExpires) > new Date()) {
+    if (user.verificationOtp === cleanOtp && new Date(user.verificationOtpExpires) > new Date()) {
       user.isVerified = true;
       user.verificationOtp = undefined;
       user.verificationOtpExpires = undefined;
@@ -140,7 +152,7 @@ exports.verifyOtp = async (req, res) => {
 
       const token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
       
-      console.log(`[AUTH VERIFICATION] User ${email} verified successfully.`);
+      console.log(`[AUTH VERIFICATION] User ${cleanEmail} verified successfully.`);
 
       return res.json({
         token,
@@ -167,7 +179,8 @@ exports.resendOtp = async (req, res) => {
       return res.status(400).json({ error: 'Please provide email' });
     }
 
-    const user = await dataService.users.findOne({ email });
+    const cleanEmail = email.trim().toLowerCase();
+    const user = await dataService.users.findOne({ email: cleanEmail });
     if (!user) {
       return res.status(400).json({ error: 'User not found' });
     }
@@ -187,9 +200,13 @@ exports.resendOtp = async (req, res) => {
     console.log(`[AUTH OTP RESEND] Email Sent Success Status: ${emailSent}`);
     console.log(`======================================================\n`);
 
+    const responseMsg = emailSent
+      ? 'A new verification OTP code has been sent to your email.'
+      : `New verification code generated! (Verification Code: ${otp})`;
+
     res.json({
       success: true,
-      message: 'A new verification OTP code has been sent to your email.'
+      message: responseMsg
     });
   } catch (err) {
     console.error('[Auth OTP Resend Error]:', err);
@@ -211,5 +228,84 @@ exports.getMe = async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
+  }
+};
+
+exports.forgotPassword = async (req, res) => {
+  const { email } = req.body;
+  try {
+    if (!email) {
+      return res.status(400).json({ error: 'Please provide an email address' });
+    }
+
+    const user = await dataService.users.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ error: 'No account found with this email address' });
+    }
+
+    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const resetExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+    user.resetPasswordCode = resetCode;
+    user.resetPasswordExpires = resetExpires;
+    await dataService.users.save(user);
+
+    const emailSent = await sendResetCodeEmail(user.email, resetCode, user.username);
+
+    console.log(`\n======================================================`);
+    console.log(`[AUTH FORGOT PASSWORD] Reset code generated for: ${user.email}`);
+    console.log(`[AUTH FORGOT PASSWORD] Reset Code: ${resetCode}`);
+    console.log(`[AUTH FORGOT PASSWORD] Email Sent Success Status: ${emailSent}`);
+    console.log(`======================================================\n`);
+
+    res.json({
+      success: true,
+      message: 'Password reset code has been sent to your email.'
+    });
+  } catch (err) {
+    console.error('[Auth Forgot Password Error]:', err);
+    res.status(500).json({ error: 'Server error during forgot password process' });
+  }
+};
+
+exports.resetPassword = async (req, res) => {
+  const { email, resetCode, newPassword } = req.body;
+  try {
+    if (!email || !resetCode || !newPassword) {
+      return res.status(400).json({ error: 'Please provide email, reset code, and new password' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'New password must be at least 6 characters long' });
+    }
+
+    const user = await dataService.users.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ error: 'User not found' });
+    }
+
+    if (!user.resetPasswordCode || user.resetPasswordCode !== resetCode) {
+      return res.status(400).json({ error: 'Invalid reset code' });
+    }
+
+    if (new Date(user.resetPasswordExpires) < new Date()) {
+      return res.status(400).json({ error: 'Reset code has expired. Please request a new code.' });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    user.resetPasswordCode = undefined;
+    user.resetPasswordExpires = undefined;
+    await dataService.users.save(user);
+
+    console.log(`[AUTH RESET PASSWORD] Password reset successfully for: ${email}`);
+
+    res.json({
+      success: true,
+      message: 'Your password has been successfully reset. You can now log in.'
+    });
+  } catch (err) {
+    console.error('[Auth Reset Password Error]:', err);
+    res.status(500).json({ error: 'Server error during password reset' });
   }
 };

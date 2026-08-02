@@ -6,7 +6,6 @@ const auth = require('../middleware/auth');
 const authController = require('../controllers/authController');
 const reraController = require('../controllers/reraController');
 const builderController = require('../controllers/builderController');
-const landController = require('../controllers/landController');
 const transactionController = require('../controllers/transactionController');
 const analyticsController = require('../controllers/analyticsController');
 const fraudController = require('../controllers/fraudController');
@@ -18,6 +17,8 @@ router.post('/auth/register', authController.register);
 router.post('/auth/login', authController.login);
 router.post('/auth/verify-otp', authController.verifyOtp);
 router.post('/auth/resend-otp', authController.resendOtp);
+router.post('/auth/forgot-password', authController.forgotPassword);
+router.post('/auth/reset-password', authController.resetPassword);
 router.get('/auth/me', auth, authController.getMe);
 
 // 2. RERA Routes
@@ -29,9 +30,6 @@ router.get('/rera/projects/:id', reraController.getProjectById);
 router.get('/builders', builderController.getBuilders);
 router.get('/builders/:id', builderController.getBuilderProfile);
 
-// 4. Land Routes
-router.get('/land/lookup', landController.lookupLand);
-router.get('/land/:id', landController.getLandById);
 
 // 5. Transaction & Circle Rates
 router.get('/transactions', transactionController.getTransactions);

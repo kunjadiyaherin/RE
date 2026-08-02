@@ -133,32 +133,6 @@ export const apiService = {
     });
   },
 
-  // Land Records
-  lookupLand: async (params) => {
-    const { state, district, taluka, village, surveyNumber } = params;
-    const query = `state=${state}&district=${district}&taluka=${taluka}&village=${village}&surveyNumber=${surveyNumber}`;
-    return apiCall(`/land/lookup?${query}`, {}, () => {
-      const land = mockData.landRecords.find(l => 
-        l.state === state &&
-        l.district.toLowerCase() === district.toLowerCase() &&
-        l.taluka.toLowerCase() === taluka.toLowerCase() &&
-        l.village.toLowerCase() === village.toLowerCase() &&
-        l.surveyNumber === surveyNumber
-      );
-      if (!land) {
-        return {
-          found: false,
-          message: 'No official survey record matches the provided details in the state land records register.',
-          record: null
-        };
-      }
-      return {
-        found: true,
-        message: 'Land survey record successfully retrieved from state revenue archives.',
-        record: land
-      };
-    });
-  },
 
   // Transactions
   getTransactions: async (params = {}) => {
@@ -447,7 +421,7 @@ export const apiService = {
         mockUsers.push({ username, email, password, role, isVerified: false });
         localStorage.setItem('mock_users', JSON.stringify(mockUsers));
       }
-      return { message: 'Verification OTP sent to your email address.', email };
+      return { message: 'Verification OTP sent to your email. [Offline Demo Mode: Use code 123456]', email, otp: '123456' };
     });
   },
 
@@ -519,7 +493,7 @@ export const apiService = {
       body: JSON.stringify({ email })
     }, () => {
       console.log(`[API Failover] Resending OTP for ${email}. New code is '123456'`);
-      return { success: true, message: 'A new verification OTP code has been sent to your email.' };
+      return { success: true, message: 'A new verification OTP code has been sent. [Offline Demo Mode: Use code 123456]' };
     });
   },
 
@@ -535,6 +509,38 @@ export const apiService = {
         isVerified: true,
         createdAt: new Date().toISOString()
       };
+    });
+  },
+
+  forgotPassword: async (email) => {
+    return apiCall('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email })
+    }, () => {
+      const mockUsers = JSON.parse(localStorage.getItem('mock_users') || '[]');
+      const user = mockUsers.find(u => u.email === email);
+      if (!user && email !== 'admin@propertyintel.com' && email !== 'investor@propertyintel.com') {
+        throw new Error('No account found with this email address.');
+      }
+      return { success: true, message: 'Password reset code has been sent to your email.' };
+    });
+  },
+
+  resetPassword: async (email, resetCode, newPassword) => {
+    return apiCall('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ email, resetCode, newPassword })
+    }, () => {
+      if (!resetCode) {
+        throw new Error('Please provide the reset code.');
+      }
+      const mockUsers = JSON.parse(localStorage.getItem('mock_users') || '[]');
+      const user = mockUsers.find(u => u.email === email);
+      if (user) {
+        user.password = newPassword;
+        localStorage.setItem('mock_users', JSON.stringify(mockUsers));
+      }
+      return { success: true, message: 'Your password has been successfully reset. You can now log in.' };
     });
   },
 

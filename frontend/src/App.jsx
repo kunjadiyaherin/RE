@@ -22,7 +22,6 @@ import {
 import OverviewTab from './pages/OverviewTab';
 import RERATab from './pages/RERATab';
 import BuildersTab from './pages/BuildersTab';
-import LandTab from './pages/LandTab';
 import CircleRatesTab from './pages/CircleRatesTab';
 import GrowthTab from './pages/GrowthTab';
 import HistoricalTab from './pages/HistoricalTab';
@@ -62,6 +61,8 @@ export default function App() {
   const [authPassword, setAuthPassword] = useState('');
   const [authRole, setAuthRole] = useState('investor');
   const [otpCode, setOtpCode] = useState('');
+  const [resetCode, setResetCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
   const [otpLoading, setOtpLoading] = useState(false);
   const [authError, setAuthError] = useState('');
@@ -125,9 +126,9 @@ export default function App() {
     setAuthLoading(true);
     setAuthError('');
     try {
-      await apiService.register(authUsername, authEmail, authPassword, authRole);
+      const res = await apiService.register(authUsername, authEmail, authPassword, authRole);
       setAuthStep('otp');
-      setAuthSuccess('Registration successful. A secure verification OTP was dispatched.');
+      setAuthSuccess(res.message || 'Registration successful. A secure verification OTP was dispatched.');
     } catch (err) {
       setAuthError(err.message || 'Registration failed.');
     } finally {
@@ -164,11 +165,44 @@ export default function App() {
     }
   };
 
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    setAuthLoading(true);
+    setAuthError('');
+    setAuthSuccess('');
+    try {
+      const res = await apiService.forgotPassword(authEmail);
+      setAuthStep('reset');
+      setAuthSuccess(res.message || 'Password reset code sent to your email address.');
+    } catch (err) {
+      setAuthError(err.message || 'Failed to send reset code.');
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    setAuthLoading(true);
+    setAuthError('');
+    setAuthSuccess('');
+    try {
+      const res = await apiService.resetPassword(authEmail, resetCode, newPassword);
+      setAuthStep('login');
+      setAuthSuccess(res.message || 'Password reset successfully. Please log in.');
+      setResetCode('');
+      setNewPassword('');
+    } catch (err) {
+      setAuthError(err.message || 'Password reset failed.');
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
   const menuItems = [
     { id: 'dashboard', label: 'Overview Dashboard', icon: LayoutDashboard },
     { id: 'rera', label: 'RERA Legitimacy', icon: ShieldCheck },
     { id: 'builders', label: 'Builder Reputation', icon: Users },
-    { id: 'land', label: 'Land Intelligence', icon: MapPin },
     { id: 'circle_rates', label: 'Circle Rate Analyzer', icon: CircleDollarSign },
     { id: 'growth', label: 'Area Growth Score', icon: TrendingUp },
     { id: 'historical', label: 'Historical Trends', icon: Grid3X3 },
@@ -196,8 +230,6 @@ export default function App() {
         return <RERATab />;
       case 'builders':
         return <BuildersTab />;
-      case 'land':
-        return <LandTab />;
       case 'circle_rates':
         return <CircleRatesTab />;
       case 'growth':
@@ -296,9 +328,9 @@ export default function App() {
               <div>
                 <h3 class="text-sm font-bold text-brand-text flex items-center gap-2">
                   <TrendingUp class="w-4 h-4 text-brand-accent" />
-                  <span>Land & Circle Rate Analytics</span>
+                  <span>Circle Rate & Price Analytics</span>
                 </h3>
-                <p class="text-[11px] text-brand-muted mt-1 leading-relaxed">Instant 7/12 land records lookup, circle-to-market variance analysis, and area-specific growth scoring metrics.</p>
+                <p class="text-[11px] text-brand-muted mt-1 leading-relaxed">Circle-to-market variance analysis, valuation modeling, and area-specific growth scoring metrics.</p>
               </div>
 
               <div>
@@ -307,15 +339,6 @@ export default function App() {
                   <span>Interactive Compliance Guidance</span>
                 </h3>
                 <p class="text-[11px] text-brand-muted mt-1 leading-relaxed">Interactive roadmaps, verification checksheets, document vaults, and an AI regulatory advisor helper.</p>
-              </div>
-            </div>
-
-            {/* Footer credential tips */}
-            <div class="p-3.5 bg-brand-bg/50 border border-brand-border/40 rounded relative z-10 space-y-1.5">
-              <span class="block text-[9px] text-brand-accent font-bold uppercase tracking-wider">Reviewer Quick Credentials</span>
-              <div class="text-[10px] text-brand-muted space-y-1 leading-relaxed font-mono">
-                <p>🔑 <strong class="text-brand-text">Admin:</strong> admin@propertyintel.com / password123</p>
-                <p>🔑 <strong class="text-brand-text">Investor:</strong> investor@propertyintel.com / password123</p>
               </div>
             </div>
           </div>
@@ -378,6 +401,113 @@ export default function App() {
                   </button>
                 </div>
               </div>
+            ) : authStep === 'forgot' ? (
+              <div class="space-y-4 animate-fade-in">
+                <div class="space-y-1.5">
+                  <h3 class="text-lg font-bold text-brand-text">Forgot Password</h3>
+                  <p class="text-xs text-brand-muted leading-relaxed">Enter your registered email address below. We will send a secure 6-digit reset code to your email.</p>
+                </div>
+
+                <form onSubmit={handleForgotPassword} class="space-y-4 pt-2">
+                  <div>
+                    <label class="block text-[10px] text-brand-muted uppercase font-bold tracking-wider mb-1.5">Email Address</label>
+                    <input 
+                      type="email" 
+                      required
+                      placeholder="your@email.com"
+                      value={authEmail}
+                      onChange={(e) => setAuthEmail(e.target.value)}
+                      class="w-full bg-brand-bg border border-brand-border rounded px-3 py-2 text-sm text-brand-text focus:outline-none focus:border-brand-accent"
+                    />
+                  </div>
+
+                  {authError && <p class="text-xs text-brand-danger font-semibold bg-brand-danger/10 p-2 rounded border border-brand-danger/20">{authError}</p>}
+                  {authSuccess && <p class="text-xs text-brand-success font-semibold bg-brand-success/10 p-2 rounded border border-brand-success/20">{authSuccess}</p>}
+
+                  <button
+                    type="submit"
+                    disabled={authLoading}
+                    class="w-full py-2.5 bg-brand-accent hover:bg-brand-accent/90 text-white text-xs font-bold rounded shadow transition-colors flex items-center justify-center gap-2"
+                  >
+                    {authLoading && <RefreshCw class="w-4 h-4 animate-spin" />}
+                    <span>Send Reset Code</span>
+                  </button>
+                </form>
+
+                <div class="text-center pt-2">
+                  <button 
+                    onClick={() => { setAuthStep('login'); setAuthError(''); setAuthSuccess(''); }}
+                    class="text-xs text-brand-muted hover:text-brand-text font-semibold"
+                  >
+                    Back to Login
+                  </button>
+                </div>
+              </div>
+            ) : authStep === 'reset' ? (
+              <div class="space-y-4 animate-fade-in">
+                <div class="space-y-1.5">
+                  <h3 class="text-lg font-bold text-brand-text">Reset Password</h3>
+                  <p class="text-xs text-brand-muted leading-relaxed">Enter the 6-digit reset code sent to your email along with your new password.</p>
+                </div>
+
+                <form onSubmit={handleResetPassword} class="space-y-4 pt-2">
+                  <div>
+                    <label class="block text-[10px] text-brand-muted uppercase font-bold tracking-wider mb-1.5">Email Address</label>
+                    <input 
+                      type="email" 
+                      required
+                      placeholder="your@email.com"
+                      value={authEmail}
+                      onChange={(e) => setAuthEmail(e.target.value)}
+                      class="w-full bg-brand-bg border border-brand-border rounded px-3 py-2 text-sm text-brand-text focus:outline-none focus:border-brand-accent"
+                    />
+                  </div>
+                  <div>
+                    <label class="block text-[10px] text-brand-muted uppercase font-bold tracking-wider mb-1.5">Reset Code (6 Digits)</label>
+                    <input 
+                      type="text" 
+                      maxLength="6"
+                      required
+                      placeholder="e.g. 123456"
+                      value={resetCode}
+                      onChange={(e) => setResetCode(e.target.value.replace(/\D/g, ''))}
+                      class="w-full bg-brand-bg border border-brand-border rounded px-3 py-2 text-sm text-brand-text focus:outline-none focus:border-brand-accent text-center font-mono tracking-widest"
+                    />
+                  </div>
+                  <div>
+                    <label class="block text-[10px] text-brand-muted uppercase font-bold tracking-wider mb-1.5">New Password</label>
+                    <input 
+                      type="password" 
+                      required
+                      placeholder="Minimum 6 characters"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      class="w-full bg-brand-bg border border-brand-border rounded px-3 py-2 text-sm text-brand-text focus:outline-none focus:border-brand-accent"
+                    />
+                  </div>
+
+                  {authError && <p class="text-xs text-brand-danger font-semibold bg-brand-danger/10 p-2 rounded border border-brand-danger/20">{authError}</p>}
+                  {authSuccess && <p class="text-xs text-brand-success font-semibold bg-brand-success/10 p-2 rounded border border-brand-success/20">{authSuccess}</p>}
+
+                  <button
+                    type="submit"
+                    disabled={authLoading}
+                    class="w-full py-2.5 bg-brand-accent hover:bg-brand-accent/90 text-white text-xs font-bold rounded shadow transition-colors flex items-center justify-center gap-2"
+                  >
+                    {authLoading && <RefreshCw class="w-4 h-4 animate-spin" />}
+                    <span>Reset Password</span>
+                  </button>
+                </form>
+
+                <div class="text-center pt-2">
+                  <button 
+                    onClick={() => { setAuthStep('login'); setAuthError(''); setAuthSuccess(''); }}
+                    class="text-xs text-brand-muted hover:text-brand-text font-semibold"
+                  >
+                    Back to Login
+                  </button>
+                </div>
+              </div>
             ) : (
               <div class="space-y-5 animate-fade-in">
                 {/* Tabs */}
@@ -414,7 +544,16 @@ export default function App() {
                       />
                     </div>
                     <div>
-                      <label class="block text-[10px] text-brand-muted uppercase font-bold tracking-wider mb-1.5">Password</label>
+                      <div class="flex items-center justify-between mb-1.5">
+                        <label class="block text-[10px] text-brand-muted uppercase font-bold tracking-wider">Password</label>
+                        <button 
+                          type="button"
+                          onClick={() => { setAuthStep('forgot'); setAuthError(''); setAuthSuccess(''); }}
+                          class="text-[10px] text-brand-accent hover:underline font-semibold"
+                        >
+                          Forgot password?
+                        </button>
+                      </div>
                       <input 
                         type="password" 
                         required
@@ -436,13 +575,6 @@ export default function App() {
                       {authLoading && <RefreshCw class="w-4 h-4 animate-spin" />}
                       <span>Sign In</span>
                     </button>
-                    
-                    {/* Mobile credential display */}
-                    <div class="p-3 bg-brand-bg/60 border border-brand-border/40 rounded space-y-1 md:hidden">
-                      <span class="block text-[8px] text-brand-accent font-bold uppercase tracking-wider">Test Credentials</span>
-                      <p class="text-[9px] text-brand-muted">Admin: admin@propertyintel.com / password123</p>
-                      <p class="text-[9px] text-brand-muted">Investor: investor@propertyintel.com / password123</p>
-                    </div>
                   </form>
                 ) : (
                   <form onSubmit={handleRegister} class="space-y-4 pt-2">
