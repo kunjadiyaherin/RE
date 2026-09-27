@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShieldAlert, AlertTriangle, Play, RefreshCw, CheckCircle, BarChart2, Filter } from 'lucide-react';
+import { ShieldAlert, AlertTriangle, Play, RefreshCw, CheckCircle, BarChart2 } from 'lucide-react';
 import { apiService } from '../apiService';
 
 export default function FraudTab() {
@@ -10,7 +10,6 @@ export default function FraudTab() {
   const [lastScanTime, setLastScanTime] = useState(null);
 
   useEffect(() => {
-    // Run a live scan on initial load instead of just showing static reports
     runScan(true);
   }, []);
 
@@ -22,7 +21,6 @@ export default function FraudTab() {
       setAnomalies(data);
       setLastScanTime(new Date());
     } catch (err) {
-      // Fallback to static reports
       try {
         const fallback = await apiService.getFraudReports();
         setAnomalies(fallback);
@@ -85,7 +83,6 @@ export default function FraudTab() {
         </div>
 
         <div className="flex items-center gap-3 shrink-0 flex-wrap">
-          {/* Risk Filter */}
           <div className="flex items-center bg-brand-panel border border-brand-border rounded overflow-hidden">
             {['All', 'High', 'Medium'].map(level => (
               <button
@@ -102,7 +99,6 @@ export default function FraudTab() {
             ))}
           </div>
 
-          {/* Scan Button */}
           <button
             onClick={() => runScan(false)}
             disabled={scanning}

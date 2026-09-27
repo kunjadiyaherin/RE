@@ -197,11 +197,15 @@ export default function OverviewTab({ setActiveTab }) {
           <div class="glass-panel p-5 rounded-lg space-y-4">
             <div class="flex items-center justify-between">
               <h2 class="text-base font-bold text-brand-text">Active Fraud Alerts</h2>
-              <button onClick={() => setActiveTab('fraud')} class="text-xs text-brand-danger hover:underline font-semibold">Audit Panel</button>
+              <button onClick={() => setActiveTab('watchlist')} class="text-xs text-brand-danger hover:underline font-semibold">Watchlist Panel</button>
             </div>
             <div class="space-y-3">
               {anomalies.map((a, idx) => (
-                <div key={idx} class="p-3 bg-brand-bg rounded border border-brand-border flex items-start gap-3">
+                <div 
+                  key={idx} 
+                  onClick={() => setActiveTab('watchlist', a)}
+                  class="p-3 bg-brand-bg rounded border border-brand-border flex items-start gap-3 cursor-pointer hover:border-brand-danger transition-colors"
+                >
                   <AlertTriangle class="w-4 h-4 text-brand-danger shrink-0 mt-0.5" />
                   <div>
                     <h4 class="text-xs font-semibold text-brand-text">{a.title}</h4>

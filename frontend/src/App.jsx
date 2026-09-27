@@ -36,6 +36,27 @@ import { apiService } from './apiService';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [selectedAlert, setSelectedAlert] = useState(null);
+  const [fraudAlerts, setFraudAlerts] = useState([]);
+
+  useEffect(() => {
+    async function fetchFraudAlerts() {
+      try {
+        const reports = await apiService.getFraudReports();
+        setFraudAlerts(reports);
+      } catch (err) {
+        console.error('Error loading fraud reports:', err);
+      }
+    }
+    fetchFraudAlerts();
+  }, []);
+
+  const handleTabChange = (tabId, alertProps = null) => {
+    setActiveTab(tabId);
+    if (tabId === 'watchlist') {
+      setSelectedAlert(alertProps);
+    }
+  };
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState(2);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -225,7 +246,7 @@ export default function App() {
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <OverviewTab setActiveTab={setActiveTab} />;
+        return <OverviewTab setActiveTab={handleTabChange} />;
       case 'rera':
         return <RERATab />;
       case 'builders':
@@ -243,7 +264,7 @@ export default function App() {
       case 'fraud':
         return <FraudTab />;
       case 'watchlist':
-        return <WatchlistTab />;
+        return <WatchlistTab selectedAlert={selectedAlert} fraudAlerts={fraudAlerts} />;
       case 'guidance':
         return <GuidanceTab />;
       case 'settings':
@@ -252,9 +273,9 @@ export default function App() {
         if (user && user.role === 'admin') {
           return <AdminTab />;
         }
-        return <OverviewTab setActiveTab={setActiveTab} />;
+        return <OverviewTab setActiveTab={handleTabChange} />;
       default:
-        return <OverviewTab setActiveTab={setActiveTab} />;
+        return <OverviewTab setActiveTab={handleTabChange} />;
     }
   };
 
