@@ -32,6 +32,7 @@ import WatchlistTab from './pages/WatchlistTab';
 import AdminTab from './pages/AdminTab';
 import SettingsTab from './pages/SettingsTab';
 import GuidanceTab from './pages/GuidanceTab';
+import LiveTickerBar from './components/LiveTickerBar';
 import { apiService } from './apiService';
 
 export default function App() {
@@ -63,6 +64,7 @@ export default function App() {
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
   const [user, setUser] = useState(null);
   const [appLoading, setAppLoading] = useState(true);
+  const [selectedCurrency, setSelectedCurrency] = useState('INR');
 
   useEffect(() => {
     const effectiveTheme = user ? theme : 'light';
@@ -104,9 +106,8 @@ export default function App() {
           localStorage.removeItem('currentUser');
         }
       }
-      // Force minimum loader duration of 1200ms for premium experience
       const elapsed = Date.now() - startTime;
-      const delay = Math.max(0, 1200 - elapsed);
+      const delay = Math.max(0, 1000 - elapsed);
       setTimeout(() => {
         setAppLoading(false);
       }, delay);
@@ -246,7 +247,7 @@ export default function App() {
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <OverviewTab setActiveTab={handleTabChange} />;
+        return <OverviewTab setActiveTab={handleTabChange} currency={selectedCurrency} />;
       case 'rera':
         return <RERATab />;
       case 'builders':
@@ -667,13 +668,17 @@ export default function App() {
   }
 
   return (
-    <div class="min-h-screen bg-brand-bg text-brand-text flex font-sans">
+    <div class="min-h-screen bg-brand-bg text-brand-text flex font-sans relative overflow-x-hidden">
+      {/* Stitch Ambient 3D Glowing Orbs for Glass Refraction */}
+      <div class="stitch-ambient-orb-1" />
+      <div class="stitch-ambient-orb-2" />
+      <div class="stitch-ambient-orb-3" />
       
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div 
           onClick={() => setSidebarOpen(false)}
-          class="fixed inset-0 bg-black/60 z-40 lg:hidden"
+          class="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-sm"
         ></div>
       )}
 
@@ -821,9 +826,12 @@ export default function App() {
             </div>
           </div>
         </header>
+        
+        {/* Live Public APIs Ticker Bar */}
+        <LiveTickerBar selectedCurrency={selectedCurrency} onCurrencyChange={setSelectedCurrency} />
 
         {/* Scrollable Work Panel with page-transition fade animation */}
-        <main class="flex-1 overflow-y-auto p-6 md:p-8">
+        <main class="flex-1 overflow-y-auto p-6 md:p-8 relative z-10">
           <div key={activeTab} class="animate-fade-in">
             {renderContent()}
           </div>

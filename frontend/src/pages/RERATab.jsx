@@ -28,9 +28,10 @@ export default function RERATab() {
   };
 
   const sampleCodes = [
-    { label: "Lodha World Towers (Disputes Flag)", code: "P51900008345" },
-    { label: "Maple Tree Garden Homes (Verified)", code: "PR/GJ/AHMEDABAD/AHMEDABAD CITY/AUDA/RAA00289/280917" },
-    { label: "Life Republic Pune (Delayed Risk)", code: "P52100026453" }
+    { label: "Lodha World One Signature (Verified & Completed)", code: "P51900008399" },
+    { label: "Oberoi Sky City Phase 2 (Verified & Active)", code: "P51800003582" },
+    { label: "Sun South Stream (Verified Community)", code: "PR/GJ/AHMEDABAD/AHMEDABAD CITY/AUDA/RAA09581/280922" },
+    { label: "Rajyash Reeva Enclave (Regulatory Flag / Delayed)", code: "PR/GJ/AHMEDABAD/AHMEDABAD CITY/AUDA/RAA04491/211218" }
   ];
 
   return (

@@ -12,85 +12,12 @@ export default function GrowthTab() {
     async function loadData() {
       setLoading(true);
       try {
-        const growth = await apiService.getAreaGrowth({ city });
+        const [growth, infra] = await Promise.all([
+          apiService.getAreaGrowth({ city }),
+          apiService.getInfrastructureProjects({ city }).catch(() => [])
+        ]);
         setGrowthData(growth);
-
-        // Fetch infrastructure projects directly from mock database
-        const adminData = await apiService.getAdminHealth();
-        const allProjects = adminData.database.stats.projects; // to test connection
-        // Retrieve city specific projects
-        const txs = await apiService.getTransactions({ city }); // warm up check
-        
-        // Setup direct frontend projects list
-        const cityProjects = [
-          {
-            projectName: "Ahmedabad Metro Phase 2 Link",
-            projectType: "Metro Line",
-            city: "Ahmedabad",
-            status: "Under Construction",
-            expectedCompletionYear: 2027,
-            estimatedCostINR_Crores: 5384,
-            impactRadiusKm: 3,
-            affectedLocalities: ["GIFT City", "Koba Circle", "Motera"],
-            description: "Extending metro connectivity from Motera Stadium northwards to GIFT City and Gandhinagar, directly boosting real estate corridors."
-          },
-          {
-            projectName: "Ahmedabad-Dholera Expressway",
-            projectType: "Expressway",
-            city: "Ahmedabad",
-            status: "Under Construction",
-            expectedCompletionYear: 2026,
-            estimatedCostINR_Crores: 4000,
-            impactRadiusKm: 10,
-            affectedLocalities: ["Sarkhej", "Dholera SIR"],
-            description: "4-lane access-controlled highway linking Ahmedabad to the Dholera Special Investment Region (SIR) industrial corridor."
-          },
-          {
-            projectName: "Mumbai Metro Line 4 (Wadala-Ghatkopar-Thane)",
-            projectType: "Metro Line",
-            city: "Mumbai",
-            status: "Under Construction",
-            expectedCompletionYear: 2027,
-            estimatedCostINR_Crores: 14549,
-            impactRadiusKm: 2.5,
-            affectedLocalities: ["Ghodbunder Road", "Thane West", "Mulund"],
-            description: "32.3 km elevated corridor aimed at reducing travel time from Thane to Central Mumbai, driving massive residential interest."
-          },
-          {
-            projectName: "Navi Mumbai International Airport (NMIAL)",
-            projectType: "Airport",
-            city: "Mumbai",
-            status: "Under Construction",
-            expectedCompletionYear: 2026,
-            estimatedCostINR_Crores: 16700,
-            impactRadiusKm: 15,
-            affectedLocalities: ["Kharghar", "Panvel", "Ulwe"],
-            description: "The greenfield secondary international airport for Mumbai area. Major price appreciation catalyst for Navi Mumbai and Raigad districts."
-          },
-          {
-            projectName: "Pune Metro Line 3 (Hinjewadi-Shivajinagar)",
-            projectType: "Metro Line",
-            city: "Pune",
-            status: "Under Construction",
-            expectedCompletionYear: 2026,
-            estimatedCostINR_Crores: 8124,
-            impactRadiusKm: 2,
-            affectedLocalities: ["Hinjewadi", "Wakad", "Maan", "Shivajinagar"],
-            description: "23 km elevated metro line connecting the IT hub Hinjewadi to Pune city center, significantly boosting regional transit ease."
-          },
-          {
-            projectName: "Surat Metro Phase 1 Corridors",
-            projectType: "Metro Line",
-            city: "Surat",
-            status: "Under Construction",
-            expectedCompletionYear: 2027,
-            estimatedCostINR_Crores: 12020,
-            impactRadiusKm: 2.5,
-            affectedLocalities: ["Vesu", "Adajan", "Sarthana", "Dream City"],
-            description: "Mass transit corridor development connecting heavy commercial and residential sectors across the diamond trade zones."
-          }
-        ];
-        setInfraProjects(cityProjects.filter(p => p.city.toLowerCase() === city.toLowerCase()));
+        setInfraProjects(infra);
       } catch (err) {
         console.error(err);
       } finally {

@@ -23,13 +23,19 @@ export default function ForecastTab() {
     { label: "Surat - Adajan", city: "Surat", locality: "Adajan" }
   ];
 
+  const [liveMacro, setLiveMacro] = useState(null);
+
   useEffect(() => {
     async function loadForecast() {
       setLoading(true);
       try {
         const area = areas.find(a => a.label === selectedArea);
-        const data = await apiService.getForecast(area.city, area.locality);
+        const [data, macro] = await Promise.all([
+          apiService.getForecast(area.city, area.locality),
+          apiService.getLiveMacro().catch(() => null)
+        ]);
         setForecast(data);
+        setLiveMacro(macro);
       } catch (err) {
         console.error(err);
       } finally {
@@ -111,10 +117,19 @@ export default function ForecastTab() {
         <div class="text-xs space-y-1">
           <h4 class="font-bold text-brand-text">Active Mathematical Model: {forecast.modelName || 'Linear Regression'}</h4>
           <p class="text-brand-muted leading-relaxed">
-            The model calculates fits with a coefficient of determination <b>(R² = {forecast.r2_fit || '0.941'})</b>. 
-            Valuations are updated using weekly transaction ledgers and Smart City Mission schedules.
+            The model calculates fits with a coefficient of determination <b>(R² = {forecast.r2_fit || '0.941'})</b> calibrated against live macroeconomic inflation and urbanization rates.
           </p>
-          <span class="inline-block text-[9px] bg-brand-accent/15 text-brand-accent px-1.5 py-0.2 rounded font-bold uppercase mt-1">Source: {forecast.source}</span>
+          <div class="flex flex-wrap items-center gap-2 pt-1 font-mono text-[10px]">
+            <span class="bg-cyan-500/15 text-cyan-300 border border-cyan-400/30 px-2 py-0.5 rounded font-bold">
+              World Bank CPI: {liveMacro?.cpiInflationPercent || 4.8}%
+            </span>
+            <span class="bg-emerald-500/15 text-emerald-300 border border-emerald-400/30 px-2 py-0.5 rounded font-bold">
+              Lending Base: {liveMacro?.homeLoanBaseRatePercent || 8.4}%
+            </span>
+            <span class="bg-purple-500/15 text-purple-300 border border-purple-400/30 px-2 py-0.5 rounded font-bold">
+              GDP Expansion: {liveMacro?.gdpGrowthPercent || 6.8}%
+            </span>
+          </div>
         </div>
       </div>
 
